@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"></property>
+        <property name="username" value="root"></property>
+        <property name="password" value="12345"></property>
+        <property name="url" value="jdbc:mysql:///springJdbc"></property>
+    </bean>
+    <bean id="jt" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <bean id="accountDao" class="transcation.AccountDao">
+        <property name="jdbcTemplate" ref="jt"></property>
+    </bean>
+
+    <bean id="accountService" class="transcation.AccountService">
+        <property name="accountDao" ref="accountDao"></property>
+    </bean>
+
+    <!--配置事务管理器，依赖数据源-->
+    <bean id="transcationManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!--编写通知-->
+    <tx:advice id="txAdvice" transaction-manager="transcationManager">
+        <tx:attributes>
+            <tx:method name="*" propagation="REQUIRED"
+             isolation="DEFAULT"
+            read-only="false"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <!--编写Aop-->
+    <aop:config>
+        <aop:pointcut id="txPointCut" expression="execution(* transcation.AccountService.*(..))"></aop:pointcut>
+        <!--将切点和通知整合-->
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="txPointCut"></aop:advisor>
+    </aop:config>
+</beans>
